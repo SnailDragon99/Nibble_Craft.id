@@ -58,16 +58,42 @@ footer{text-align:center;padding:40px;background:var(--dark);color:#fff}
 <body>
 
 <nav>
-<div class="logo">
-    <img src="images/logo.webp" alt="Nibble Craft Logo">
-    <span>Nibble Craft</span>
-</div>
-<div style="display:flex;gap:10px;align-items:center">
-<div id="cartBtn" onclick="openCart()">🛒 (<span id="cartCount">0</span>)</div>
-<div>📞 08883923632</div>
-</div>
-</nav>
 
+<div class="logo">
+
+<img src="images/logo.webp">
+
+<span>Nibble Craft</span>
+
+</div>
+
+<div
+style="
+display:flex;
+gap:10px;
+align-items:center;
+">
+
+<button
+onclick="openTrackingModal()">
+
+📦 Cek Pesanan
+
+</button>
+
+<div
+class="cart-btn"
+onclick="openCart()">
+
+🛒
+
+<span id="cartCount">0</span>
+
+</div>
+
+</div>
+
+</nav>
 <section class="hero">
 <div><img id="heroImg" src="images/hero-mango.webp"></div>
 <div>
@@ -171,7 +197,23 @@ function removeCart(i){cart.splice(i,1);updateCartCount();renderCart();}
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
-import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+import {
+
+getFirestore,
+
+collection,
+
+addDoc,
+
+serverTimestamp,
+
+query,
+
+where,
+
+getDocs
+
+} from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBP1Z5Rx-Cx9HQSL2WZMLSZvFfbHRDzOik",
@@ -195,18 +237,189 @@ const customerAddress=document.getElementById('customerAddress').value.trim();
 
 const total=cart.reduce((a,b)=>a+(b.price*b.qty),0);
 
-const docRef=await addDoc(collection(db,'orders'),{
-customerName,customerPhone,customerAddress,
-items:cart,total,status:'Menunggu',
+const docRef=const orderNumber =
+"NC-" + Date.now();
+
+await addDoc(collection(db,"orders"),{
+
+orderNumber,
+
+customerName,
+customerPhone,
+customerAddress,
+
+items:cart,
+
+total,
+
+status:"Menunggu",
+
 createdAt:serverTimestamp()
+
 });
 
-alert('Pesanan berhasil dibuat. ID: '+docRef.id);
-cart=[];
-updateCartCount();
-renderCart();
+
+alert(
+
+"Pesanan berhasil dibuat!\n\n" +
+
+"Nomor Pesanan:\n" +
+
+orderNumber +
+
+"\n\nSimpan nomor ini untuk cek status pesanan."
+
+);
+
+window.openTrackingModal = ()=>{
+
+document
+.getElementById(
+"trackingModal"
+)
+.style.display = "flex";
+
+};
+
+window.closeTrackingModal = ()=>{
+
+document
+.getElementById(
+"trackingModal"
+)
+.style.display = "none";
+
+};
+
+window.checkOrder = async()=>{
+
+const orderNumber =
+
+document
+.getElementById(
+"trackingNumber"
+)
+.value
+.trim();
+
+if(!orderNumber){
+
+alert(
+"Masukkan nomor pesanan"
+);
+
+return;
+
+}
+
+const q = query(
+
+collection(
+db,
+"orders"
+),
+
+where(
+"orderNumber",
+"==",
+orderNumber
+)
+
+);
+
+const snapshot =
+await getDocs(q);
+
+const result =
+
+document
+.getElementById(
+"trackingResult"
+);
+
+if(snapshot.empty){
+
+result.innerHTML =
+
+"<p>❌ Pesanan tidak ditemukan</p>";
+
+return;
+
+}
+
+snapshot.forEach(doc=>{
+
+const data =
+doc.data();
+
+result.innerHTML = `
+
+<h3>
+✅ Pesanan Ditemukan
+</h3>
+
+<p>
+<b>No Pesanan:</b>
+${data.orderNumber}
+</p>
+
+<p>
+<b>Status:</b>
+${data.status}
+</p>
+
+<p>
+<b>Total:</b>
+Rp ${data.total.toLocaleString('id-ID')}
+</p>
+
+`;
+
+});
+
 };
 </script>
+<div
+class="modal"
+id="trackingModal">
 
+<div class="modal-content">
+
+<h2>
+Cek Status Pesanan
+</h2>
+
+<input
+type="text"
+id="trackingNumber"
+placeholder="Nomor Pesanan">
+
+<button
+onclick="checkOrder()">
+
+Cek Status
+
+</button>
+
+<div
+id="trackingResult"
+style="margin-top:20px;">
+
+</div>
+
+<button
+style="
+margin-top:15px;
+background:#ddd;
+"
+onclick="closeTrackingModal()">
+
+Tutup
+
+</button>
+
+</div>
+
+</div>
 </body>
 </html>
