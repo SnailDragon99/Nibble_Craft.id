@@ -10,7 +10,24 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:Poppins,sans-serif;background:var(--cream);color:var(--dark)}
 nav{display:flex;justify-content:space-between;align-items:center;padding:20px 5%;background:#fff;position:sticky;top:0}
-.logo{display:flex;align-items:center;gap:10px;font:700 2rem Fredoka,sans-serif}
+.logo{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    font-family:'Fredoka',sans-serif;
+    font-size:2rem;
+    font-weight:700;
+}
+
+.logo img{
+    width:55px;
+    height:55px;
+    object-fit:contain;
+}
+
+.logo span{
+    color:#FFB703;
+}
 .hero{padding:40px 5%;display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center}
 .hero img{width:100%;max-width:500px;margin:auto}
 .title{font:700 4rem Fredoka,sans-serif}
@@ -41,7 +58,10 @@ footer{text-align:center;padding:40px;background:var(--dark);color:#fff}
 <body>
 
 <nav>
-<div class="logo">Nibble Craft</div>
+<div class="logo">
+    <img src="images/logo.webp" alt="Nibble Craft Logo">
+    <span>Nibble Craft</span>
+</div>
 <div style="display:flex;gap:10px;align-items:center">
 <div id="cartBtn" onclick="openCart()">🛒 (<span id="cartCount">0</span>)</div>
 <div>📞 08883923632</div>
