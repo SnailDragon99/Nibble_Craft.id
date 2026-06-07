@@ -9,7 +9,7 @@
 :root{--mango:#ffb703;--cream:#fffaf2;--dark:#5a3825}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:Poppins,sans-serif;background:var(--cream);color:var(--dark)}
-nav{display:flex;justify-content:space-between;align-items:center;padding:20px 5%;background:#fff;position:sticky;top:0}
+nav{display:flex;justify-content:space-between;align-items:center;padding:20px 5%;background:#fff;position:sticky;top:0;z-index:100}
 .logo{
     display:flex;
     align-items:center;
@@ -47,7 +47,7 @@ nav{display:flex;justify-content:space-between;align-items:center;padding:20px 5
 .grid{display:flex;flex-wrap:wrap;justify-content:center;gap:20px}
 .card{background:#fff;padding:20px;border-radius:20px;cursor:pointer;box-shadow:0 8px 20px rgba(0,0,0,.08);width:250px;text-align:center}
 .card img{width:180px;height:180px;object-fit:contain}
-.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);justify-content:center;align-items:center}
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);justify-content:center;align-items:center;z-index:1000}
 .modal-content{background:#fff;padding:25px;border-radius:20px;width:90%;max-width:500px;max-height:90vh;overflow:auto}
 input,textarea,button{width:100%;padding:12px;margin-top:10px}
 button{border:none;border-radius:10px;background:var(--mango);font-weight:700;cursor:pointer}
@@ -58,42 +58,19 @@ footer{text-align:center;padding:40px;background:var(--dark);color:#fff}
 <body>
 
 <nav>
-
 <div class="logo">
-
 <img src="images/logo.webp">
-
 <span>Nibble Craft</span>
-
 </div>
 
-<div
-style="
-display:flex;
-gap:10px;
-align-items:center;
-">
-
-<button
-onclick="openTrackingModal()">
-
-📦 Cek Pesanan
-
-</button>
-
-<div
-class="cart-btn"
-onclick="openCart()">
-
-🛒
-
-<span id="cartCount">0</span>
-
+<div style="display:flex;gap:10px;align-items:center;">
+<button onclick="openTrackingModal()">📦 Cek Pesanan</button>
+<div class="cart-btn" onclick="openCart()" style="cursor:pointer; font-size:1.2rem;">
+🛒 <span id="cartCount">0</span>
 </div>
-
 </div>
-
 </nav>
+
 <section class="hero">
 <div><img id="heroImg" src="images/hero-mango.webp"></div>
 <div>
@@ -125,13 +102,21 @@ onclick="openCart()">
 <h2>Keranjang Belanja</h2>
 <div id="cartItems"></div>
 <h3>Total Rp <span id="cartTotal">0</span></h3>
-
 <input id="customerName" placeholder="Nama Lengkap">
 <input id="customerPhone" placeholder="Nomor HP">
 <textarea id="customerAddress" placeholder="Alamat Lengkap"></textarea>
-
 <button onclick="checkoutFirebase()">Buat Pesanan</button>
 <button onclick="closeCart()">Tutup</button>
+</div>
+</div>
+
+<div class="modal" id="trackingModal">
+<div class="modal-content">
+<h2>Cek Status Pesanan</h2>
+<input type="text" id="trackingNumber" placeholder="Nomor Pesanan">
+<button onclick="checkOrder()">Cek Status</button>
+<div id="trackingResult" style="margin-top:20px;"></div>
+<button style="margin-top:15px; background:#ddd;" onclick="closeTrackingModal()">Tutup</button>
 </div>
 </div>
 
@@ -143,10 +128,12 @@ const products=[
 {id:2,title:'Tiramisu Mini',price:7000,priceLabel:'7K',img:'images/tiramisu-mini.webp',desc:'Cream lembut dengan rasa kopi yang pas.'}
 ];
 
-let cart=[];
+// Menempelkan variabel ke window agar bisa diakses oleh <script type="module">
+window.cart=[];
 let currentProduct=null;
 
 function renderProducts(){
+const productGrid = document.getElementById('productGrid');
 productGrid.innerHTML='';
 products.forEach(p=>{
 productGrid.innerHTML+=`
@@ -168,51 +155,43 @@ qty.value=1;
 updateTotal();
 modal.style.display='flex';
 }
-function closeModal(){modal.style.display='none';}
-function updateTotal(){
+window.closeModal = function(){modal.style.display='none';}
+window.updateTotal = function(){
 total.innerText=(currentProduct.price*(parseInt(qty.value)||1)).toLocaleString('id-ID');
 }
-function addToCart(){
+window.addToCart = function(){
 const q=parseInt(qty.value)||1;
-const e=cart.find(i=>i.id===currentProduct.id);
-if(e){e.qty+=q}else{cart.push({...currentProduct,qty:q})}
-updateCartCount();
+const e=window.cart.find(i=>i.id===currentProduct.id);
+if(e){e.qty+=q}else{window.cart.push({...currentProduct,qty:q})}
+window.updateCartCount();
 closeModal();
 }
-function updateCartCount(){
-cartCount.innerText=cart.reduce((a,b)=>a+b.qty,0);
+window.updateCartCount = function(){
+cartCount.innerText=window.cart.reduce((a,b)=>a+b.qty,0);
 }
-function openCart(){renderCart();cartModal.style.display='flex';}
-function closeCart(){cartModal.style.display='none';}
-function renderCart(){
+window.openCart = function(){renderCart();cartModal.style.display='flex';}
+window.closeCart = function(){cartModal.style.display='none';}
+window.renderCart = function(){
 let totalHarga=0;
-cartItems.innerHTML=cart.map((i,idx)=>{
+cartItems.innerHTML=window.cart.map((i,idx)=>{
 const sub=i.price*i.qty; totalHarga+=sub;
-return `<div>${i.title} (${i.qty}) - Rp ${sub.toLocaleString('id-ID')} <button onclick="removeCart(${idx})">Hapus</button></div>`;
+return `<div>${i.title} (${i.qty}) - Rp ${sub.toLocaleString('id-ID')} <button onclick="removeCart(${idx})" style="width:auto; padding:2px 8px; margin:0 0 0 10px;">Hapus</button></div>`;
 }).join('');
 cartTotal.innerText=totalHarga.toLocaleString('id-ID');
 }
-function removeCart(i){cart.splice(i,1);updateCartCount();renderCart();}
+window.removeCart = function(i){window.cart.splice(i,1);window.updateCartCount();window.renderCart();}
 </script>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
 import {
-
 getFirestore,
-
 collection,
-
 addDoc,
-
 serverTimestamp,
-
 query,
-
 where,
-
 getDocs
-
 } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -229,197 +208,96 @@ const app=initializeApp(firebaseConfig);
 const db=getFirestore(app);
 
 window.checkoutFirebase=async()=>{
-if(cart.length===0) return alert('Keranjang kosong');
+if(window.cart.length===0) return alert('Keranjang kosong');
 
 const customerName=document.getElementById('customerName').value.trim();
 const customerPhone=document.getElementById('customerPhone').value.trim();
 const customerAddress=document.getElementById('customerAddress').value.trim();
 
-const total=cart.reduce((a,b)=>a+(b.price*b.qty),0);
+if(!customerName || !customerPhone || !customerAddress){
+  return alert('Mohon lengkapi data pengiriman');
+}
 
-const docRef=const orderNumber =
-"NC-" + Date.now();
+const total=window.cart.reduce((a,b)=>a+(b.price*b.qty),0);
+const orderNumber = "NC-" + Date.now();
 
-await addDoc(collection(db,"orders"),{
+try {
+  const docRef = await addDoc(
+  collection(db,"orders"),
+  {
+  orderNumber,
+  customerName,
+  customerPhone,
+  customerAddress,
+  items:window.cart,
+  total,
+  status:"Menunggu",
+  createdAt:serverTimestamp()
+  }
+  );
 
-orderNumber,
-
-customerName,
-customerPhone,
-customerAddress,
-
-items:cart,
-
-total,
-
-status:"Menunggu",
-
-createdAt:serverTimestamp()
-
-});
-
-
-alert(
-
-"Pesanan berhasil dibuat!\n\n" +
-
-"Nomor Pesanan:\n" +
-
-orderNumber +
-
-"\n\nSimpan nomor ini untuk cek status pesanan."
-
-);
+  alert(
+  "Pesanan berhasil dibuat!\n\n" +
+  "Nomor Pesanan:\n" +
+  orderNumber +
+  "\n\nSimpan nomor ini untuk cek status pesanan."
+  );
+  
+  window.cart = [];
+  window.updateCartCount();
+  window.renderCart();
+  window.closeCart();
+} catch (error) {
+  console.error("Error adding document: ", error);
+  alert("Gagal membuat pesanan, silahkan coba lagi.");
+}
+}; 
 
 window.openTrackingModal = ()=>{
-
-document
-.getElementById(
-"trackingModal"
-)
-.style.display = "flex";
-
+document.getElementById("trackingModal").style.display = "flex";
 };
 
 window.closeTrackingModal = ()=>{
-
-document
-.getElementById(
-"trackingModal"
-)
-.style.display = "none";
-
+document.getElementById("trackingModal").style.display = "none";
+document.getElementById("trackingResult").innerHTML = "";
+document.getElementById("trackingNumber").value = "";
 };
 
 window.checkOrder = async()=>{
-
-const orderNumber =
-
-document
-.getElementById(
-"trackingNumber"
-)
-.value
-.trim();
+const orderNumber = document.getElementById("trackingNumber").value.trim();
 
 if(!orderNumber){
-
-alert(
-"Masukkan nomor pesanan"
-);
-
+alert("Masukkan nomor pesanan");
 return;
-
 }
 
 const q = query(
-
-collection(
-db,
-"orders"
-),
-
-where(
-"orderNumber",
-"==",
-orderNumber
-)
-
+collection(db,"orders"),
+where("orderNumber", "==", orderNumber)
 );
 
-const snapshot =
-await getDocs(q);
-
-const result =
-
-document
-.getElementById(
-"trackingResult"
-);
+const snapshot = await getDocs(q);
+const result = document.getElementById("trackingResult");
 
 if(snapshot.empty){
-
-result.innerHTML =
-
-"<p>❌ Pesanan tidak ditemukan</p>";
-
+result.innerHTML = "<p>❌ Pesanan tidak ditemukan</p>";
 return;
-
 }
 
+result.innerHTML = ""; // Reset kontainer terlebih dahulu
 snapshot.forEach(doc=>{
-
-const data =
-doc.data();
-
+const data = doc.data();
 result.innerHTML = `
-
-<h3>
-✅ Pesanan Ditemukan
-</h3>
-
-<p>
-<b>No Pesanan:</b>
-${data.orderNumber}
-</p>
-
-<p>
-<b>Status:</b>
-${data.status}
-</p>
-
-<p>
-<b>Total:</b>
-Rp ${data.total.toLocaleString('id-ID')}
-</p>
-
+<div style="text-align:left; background:#f9f9f9; padding:15px; border-radius:10px; border:1px solid #eee;">
+<h3 style="color:green; margin-bottom:10px;">✅ Pesanan Ditemukan</h3>
+<p><b>No Pesanan:</b> ${data.orderNumber}</p>
+<p><b>Nama:</b> ${data.customerName}</p>
+<p><b>Status:</b> <span style="background:orange; color:white; padding:2px 6px; border-radius:5px;">${data.status}</span></p>
+<p><b>Total:</b> Rp ${data.total.toLocaleString('id-ID')}</p>
+</div>
 `;
-
 });
-
 };
 </script>
-<div
-class="modal"
-id="trackingModal">
-
-<div class="modal-content">
-
-<h2>
-Cek Status Pesanan
-</h2>
-
-<input
-type="text"
-id="trackingNumber"
-placeholder="Nomor Pesanan">
-
-<button
-onclick="checkOrder()">
-
-Cek Status
-
-</button>
-
-<div
-id="trackingResult"
-style="margin-top:20px;">
-
-</div>
-
-<button
-style="
-margin-top:15px;
-background:#ddd;
-"
-onclick="closeTrackingModal()">
-
-Tutup
-
-</button>
-
-</div>
-
-</div>
 </body>
 </html>
