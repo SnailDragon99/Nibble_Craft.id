@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Nibble Craft</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+body{font-family:Poppins,sans-serif;background:#fffaf2;margin:0;padding:20px}
+h1{font-family:Fredoka,sans-serif}
+.card{background:#fff;padding:20px;border-radius:16px;margin-bottom:15px;box-shadow:0 4px 15px rgba(0,0,0,.08)}
+.status{padding:8px;border-radius:8px;border:1px solid #ddd}
+button{padding:10px 15px;border:none;border-radius:8px;cursor:pointer}
+.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+<h1>📦 Admin Nibble Craft</h1>
+<button onclick="loadOrders()">Refresh</button>
+</div>
+
+<div id="orderList">
+Memuat pesanan...
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+import {
+getFirestore,
+collection,
+getDocs,
+doc,
+updateDoc,
+orderBy,
+query
+} from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBP1Z5Rx-Cx9HQSL2WZMLSZvFfbHRDzOik",
+  authDomain: "nibble-craft.firebaseapp.com",
+  projectId: "nibble-craft",
+  storageBucket: "nibble-craft.firebasestorage.app",
+  messagingSenderId: "171122979920",
+  appId: "1:171122979920:web:e2ff146cf821c7d152cd55",
+  measurementId: "G-ZM5N14D8HV"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+window.loadOrders = async function(){
+
+const orderList = document.getElementById("orderList");
+orderList.innerHTML = "Memuat...";
+
+const q = query(
+collection(db,"orders"),
+orderBy("createdAt","desc")
+);
+
+const snapshot = await getDocs(q);
+
+if(snapshot.empty){
+orderList.innerHTML = "<p>Belum ada pesanan.</p>";
+return;
+}
+
+let html = "";
+
+snapshot.forEach(docSnap=>{
+
+const order = docSnap.data();
+
+let items = "";
+
+(order.items || []).forEach(item=>{
+items += `
+<li>
+${item.title} - ${item.qty} pcs
+</li>
+`;
+});
+
+html += `
+<div class="card">
+
+<h3>Order #${docSnap.id}</h3>
+
+<p><b>Nama:</b> ${order.customerName || "-"}</p>
+<p><b>HP:</b> ${order.customerPhone || "-"}</p>
+<p><b>Alamat:</b> ${order.customerAddress || "-"}</p>
+
+<ul>${items}</ul>
+
+<p>
+<b>Total:</b>
+Rp ${(order.total || 0).toLocaleString('id-ID')}
+</p>
+
+<select
+class="status"
+onchange="updateStatus('${docSnap.id}', this.value)">
+
+<option value="Menunggu" ${order.status==="Menunggu"?"selected":""}>Menunggu</option>
+<option value="Diproses" ${order.status==="Diproses"?"selected":""}>Diproses</option>
+<option value="Dikirim" ${order.status==="Dikirim"?"selected":""}>Dikirim</option>
+<option value="Selesai" ${order.status==="Selesai"?"selected":""}>Selesai</option>
+
+</select>
+
+</div>
+`;
+
+});
+
+orderList.innerHTML = html;
+
+}
+
+window.updateStatus = async function(id,status){
+
+await updateDoc(
+doc(db,"orders",id),
+{status}
+);
+
+alert("Status diperbarui");
+
+}
+
+loadOrders();
+
+</script>
+
+</body>
+</html>
